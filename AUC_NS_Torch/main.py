@@ -137,6 +137,9 @@ def get_prior_beta(prior):
 
 def model_init():
     # A new train
+    model_path = r'.\model'
+    if not os.path.exists(model_path):
+        os.makedirs(model_path)
     if arg.train_mode == 'new_train':
         if arg.encoder == 'MF':
             model = MF(num_users, num_items, arg, device)
@@ -190,7 +193,7 @@ def model_train(real_epoch):
         batch = batch.to(device)
 
         # Calculate Score for users
-        rating_score = model.caculate_score(users)
+        rating_score = model.calculate_score(users)
 
 
         # Negative Sampling

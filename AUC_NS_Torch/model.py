@@ -38,15 +38,6 @@ class MF(nn.Module):
         pos_scores = pos_scores.sum(dim=1)  # (bs,)
         pos_exp = torch.exp(pos_scores)
 
-        # # Calculate Neg
-        # neg_item_embs = torch.split(neg_item_embs, 1, dim=1)
-        # neg_exp = torch.zeros(self.arg.batch_size).to(self.device)
-        # for neg_item_emb in neg_item_embs:
-        #     neg_item_emb = neg_item_emb.view(self.arg.batch_size, self.dim)
-        #     neg_scores = torch.mul(users_emb, neg_item_emb)
-        #     neg_scores = neg_scores.sum(dim=1)  # (bs,)
-        #     neg_exp += torch.exp(neg_scores)  # (bs,)
-
         # Calculate Neg
         neg_k = (users_emb * neg_item_embs.view(self.arg.num_negsamples, self.arg.batch_size, self.dim)).sum(dim=-1)
 
@@ -71,7 +62,7 @@ class MF(nn.Module):
         rate_mat = torch.mm(all_users_emb, all_items_emb.t())
         return rate_mat
 
-    def caculate_score(self, users):
+    def calculate_score(self, users):
         all_users_emb = self.User_Emb.weight
         all_items_emb = self.Item_Emb.weight
         users_emb = all_users_emb[users]
@@ -155,7 +146,7 @@ class LightGCN(nn.Module):
         rate_mat = torch.mm(all_users_emb, all_items_emb.t())
         return rate_mat
 
-    def caculate_score(self, users):
+    def calculate_score(self, users):
         all_users_emb = self.User_Emb.weight
         all_items_emb = self.Item_Emb.weight
         users_emb = all_users_emb[users]
