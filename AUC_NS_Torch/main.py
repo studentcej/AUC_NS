@@ -8,6 +8,7 @@ import numpy as np
 
 
 from parse import parse_args
+from tqdm import tqdm
 from data import *
 from model import *
 from evaluation import *
@@ -182,7 +183,7 @@ def model_train(real_epoch):
     I_plus_list = dataset.pos_lens_List.to(device)
     I_minus_list = dataset.neg_lens_List.to(device)
 
-    for batch in train_loader:
+    for batch in tqdm(train_loader):
         optimizer.zero_grad()
 
         # Fetch Data
