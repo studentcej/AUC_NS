@@ -36,7 +36,7 @@ def get_data_path():
         total_file = directory + '/' + 'yahoo1.csv'
         train_file = directory + '/' + 'yahoo1_train.csv'
         test_file = directory + '/' + 'yahoo1_test.csv'
-    elif arg.dataset == 'movielens':
+    elif arg.dataset == '1M':
         total_file = directory + '/' + '1m1.csv'
         train_file = directory + '/' + '1m1_train.csv'
         test_file = directory + '/' + '1m1_test.csv'
