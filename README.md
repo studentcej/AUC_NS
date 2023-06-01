@@ -55,7 +55,7 @@ the suggesting AUC_NS parameters are below:
 | yahoo-MF       |   0.65   |  0.001   |  0.004   |
 | yahoo-LightGCN |   0.65   |  0.001   |  0.004   |
 
-For instance, run the following command to train an embedding on STL10 with hard negatives.
+For instance, run the following command to train an embedding on AUC_NS.
 ```
 python main.py --alpha 0.75 --beta 0.01 --gama 0.006
 ```
