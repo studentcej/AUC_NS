@@ -65,9 +65,3 @@ The AUC-NS method can extend negative sampling from one to N negative examples, 
 python main.py --Loss Info_NCE --num_negsamples 3
 ```
 to obtain better performance models.
-
-## More information
-
-If you have more questions, please feel free to contact erjia_chen@hust.edu.cn 
-
-You can describe your problem in detail in the email, we will answer your questions at the first time.
