@@ -23,7 +23,7 @@ You can set the relevant parameters for model training,
 - `--lr_dc_epoch` training epoch at which the learning rate starts to decay.
 
 Suggested training parameters parameters are:
-#### Suggesting Model Training Parameters
+#### Suggested Model Training Parameters
 |                | batch_size |  l2   |  lr  | lr_dc | lr_dc_epoch  | 
 |----------------|:----------:|:-----:|:----:|:-----:|:------------:|
 | 100k-MF        |    128     | 1e-4  | 0.1  |  0.1  |  [20,60,80]  |
