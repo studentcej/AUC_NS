@@ -46,14 +46,14 @@ AUC-optimal negative sampling related parameters:
 
 the suggesting AUC_NS parameters are below:
 #### Suggested AUC_NS Parameters
-|                | $\alpha$ | $\beta$  | $\gama$  | 
-|----------------|:-----:|:-----:|:-----:|
-| 100k-MF        | 0.75  | 0.01  | 0.006 | 
-| 100k-LightGCN  | 0.75  | 0.01  | 0.006 |
-| 1M-MF          | 0.75  | 0.01  | 0.006 |
-| 1M-LightGCN    | 0.75  | 0.01  | 0.006 |
-| yahoo-MF       | 0.65  | 0.001 | 0.004 |
-| yahoo-LightGCN | 0.65  | 0.001 | 0.004 |
+|                | $\alpha$ | $\beta$  | $\gamma$ |
+|----------------|:--------:|:--------:|:--------:|
+| 100k-MF        |   0.75   |   0.01   |  0.006   | 
+| 100k-LightGCN  |   0.75   |   0.01   |  0.006   |
+| 1M-MF          |   0.75   |   0.01   |  0.006   |
+| 1M-LightGCN    |   0.75   |   0.01   |  0.006   |
+| yahoo-MF       |   0.65   |  0.001   |  0.004   |
+| yahoo-LightGCN |   0.65   |  0.001   |  0.004   |
 
 For instance, run the following command to train an embedding on STL10 with hard negatives.
 ```
