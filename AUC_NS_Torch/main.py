@@ -64,19 +64,16 @@ def get_numbers_of_ui_and_divider(file):
     :return:
     num_users: total number of users
     num_items: total number of items
-    interaction_counter: total number of interactions
-    item_divider: [hot item list, cold item list]
+    dividing_tensor: [|I|] element 1 represents hot items, while element 0 represents cold items.
     '''
     data = pd.read_csv(file, header=0, dtype='str', sep=',')
     userlist = list(data['user'].unique())
     itemlist = list(data['item'].unique())
     popularity = np.zeros(len(itemlist))
-    interaction_counter = 0
     for i in data.itertuples():
         user, item, rating = getattr(i, 'user'), getattr(i, 'item'), getattr(i, 'rating')
         user, item = int(user), int(item)
         popularity[int(item)] += 1
-        interaction_counter += 1
     num_users, num_items = len(userlist), len(itemlist)
 
     # Dividing HOT&COLD
@@ -84,41 +81,34 @@ def get_numbers_of_ui_and_divider(file):
     item_threshold = int(num_items * 0.85)
     divide_item = x[item_threshold]
     popularty_threshold = popularity[divide_item]
-    Hot_item = list(np.where(popularity >= popularty_threshold)[0])
-    Cold_item = list(np.where(popularity < popularty_threshold)[0])
-    item_divider = [Hot_item, Cold_item]
-    return num_users, num_items, interaction_counter, item_divider
+    pop_tensor = torch.tensor(popularity)
+    dividing_tensor = torch.where(pop_tensor >= popularty_threshold, 1, 0).unsqueeze(0).expand(num_users,num_items)
+    return num_users, num_items, dividing_tensor
 
 
 def load_train_data(path, num_item):
     data = pd.read_csv(path, header=0, sep=',')
-    data_dict = {}
     datapair = []
     popularity = np.zeros(num_item)
+    train_tensor = torch.zeros(num_users, num_items)
     for i in data.itertuples():
         user, item, rating = getattr(i, 'user'), getattr(i, 'item'), getattr(i, 'rating')
         user, item = int(user), int(item)
         popularity[int(item)] += 1
-        data_dict.setdefault(user, {})
-        data_dict[user][item] = 1
         datapair.append((user, item))
+        train_tensor[user, item] = 1
     prior = popularity / sum(popularity)
-    return data_dict, prior, datapair, popularity
+    return train_tensor, prior, datapair
 
 
 def load_test_data(path, num_user, num_item):
     data = pd.read_csv(path, header=0, sep=',')
-    label = np.zeros((num_user, num_item))
-    data_dict = {}
-    popularity = np.zeros(num_item)
+    test_tensor = torch.zeros(num_users, num_items)
     for i in data.itertuples():
         user, item, rating = getattr(i, 'user'), getattr(i, 'item'), getattr(i, 'rating')
         user, item = int(user), int(item)
-        popularity[int(item)] += 1
-        data_dict.setdefault(user, set())
-        data_dict[user].add(item)
-        label[user, item] = 1
-    return data_dict, label, popularity
+        test_tensor[user, item] = 1
+    return test_tensor
 
 
 def collect_G_Lap_Adj():
@@ -222,13 +212,9 @@ def model_test():
     sp = time.time()
     Pre_dic, Recall_dict, F1_dict, NDCG_dict, OHR_dict, UHR_dict, OCR_dict, UCR_dict,  FPR_dict, FNR_dict = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
     rating_mat = model.predict()  # |U| * |V|
-    if device == 'cpu':
-        rating_mat = rating_mat.detach().numpy()
-    else:
-        rating_mat = rating_mat.cpu().detach().numpy()
-    rating_mat = erase(rating_mat, train_dict)
+    rating_mat = erase(rating_mat)
     for k in arg.topk:
-        metrices = topk_eval(rating_mat, test_label, k, item_divider, test_dict)
+        metrices = topk_eval(rating_mat, k, test_tensor.to(device), dividing_tensor.to(device))
         precision, recall, F1, ndcg, OHR, UHR, OCR, UCR, FPR, FNR = metrices[0], metrices[1], metrices[2], metrices[3],  metrices[4], metrices[5], metrices[6], metrices[7], metrices[8], metrices[9]
         Pre_dic[k] = precision
         Recall_dict[k] = recall
@@ -244,6 +230,10 @@ def model_test():
     print('Predicting time:[%0.2f s]' % (time.time() - sp), file=f)
     return Pre_dic, Recall_dict, F1_dict, NDCG_dict, OHR_dict, UHR_dict, OCR_dict, UCR_dict,  FPR_dict, FNR_dict
 
+def erase(score):
+    x = train_tensor.to(device) * (-1000)
+    score = score + x
+    return score
 
 def print_epoch_result(real_epoch, Pre_dic, Recall_dict, F1_dict, NDCG_dict, OHR_dict, UHR_dict, OCR_dict, UCR_dict, FPR_dict, FNR_dict):
     best_result = {}
@@ -319,11 +309,11 @@ if __name__ == '__main__':
 
     init_seed(2022)
     total_file, train_file, test_file = get_data_path()
-    num_users, num_items, num_interaction, item_divider = get_numbers_of_ui_and_divider(total_file)
+    num_users, num_items, dividing_tensor = get_numbers_of_ui_and_divider(total_file)
 
     # Load Data
-    train_dict, prior, train_pair, train_popularity = load_train_data(train_file, num_items)
-    test_dict, test_label, test_popularity = load_test_data(test_file, num_users, num_items)
+    train_tensor, prior, train_pair = load_train_data(train_file, num_items)
+    test_tensor = load_test_data(test_file, num_users, num_items)
 
     dataset = Data(train_pair, arg, num_users, num_items)
     train_loader = DataLoader(dataset, batch_size=arg.batch_size, shuffle=True, collate_fn=dataset.collate_fn, drop_last=True, pin_memory=True, num_workers=arg.num_workers)
@@ -331,6 +321,7 @@ if __name__ == '__main__':
     # Init Model
     model, optimizer, scheduler, checkpoint = model_init()
 
+    # Calculate Prior
     prior_beta = torch.tensor(get_prior_beta(prior)).to(device)
 
     # Train and Test

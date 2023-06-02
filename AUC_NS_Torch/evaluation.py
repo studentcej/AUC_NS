@@ -1,104 +1,85 @@
 import math
-import heapq
-import numpy as np
-
-
+import torch
 # evaluation
-def erase(score, train_dict):
-    for user in train_dict:
-        for item in train_dict[user]:
-            score[user, item] = -1000.0
-    return score
+
+USE_CUDA = torch.cuda.is_available()
+device = torch.device('cuda' if USE_CUDA else 'cpu')
 
 
-def topk_eval(score, label, k, item_devider, test_dict):
+def get_rec_tensor(k, topn_rec_index, num_items):
+    '''
+    :param k: Top-k
+    :param topn_rec_index: [|U|*k]recommended item id
+    :param num_items: The total number of numbers
+    :return:
+    rec_tensor: [|U|*|I|] with 0/1 elements ,1 indicates the item is recommended to the user
+    index_dim0:[|U|*k] dim0 index for slicing
+    '''
+    index_dim0 = torch.arange(topn_rec_index.shape[0]).to(device)
+    index_dim0 = index_dim0.unsqueeze(-1).expand(topn_rec_index.shape[0], k)
+    rec_tensor = torch.zeros(topn_rec_index.shape[0],num_items).to(device)
+    rec_tensor[index_dim0, topn_rec_index] = 1
+    return rec_tensor, index_dim0
+
+
+def get_idcg(discountlist, test_count, k):
+    idcg = torch.zeros(len(test_count)).to(device)
+    label_count_list = test_count.tolist()
+    for i in range(len(test_count)):
+        idcg[i] = discountlist[0:int(label_count_list[i])].sum()
+    return idcg
+
+
+def topk_eval(score,  k, test_tensor, hot_tensor):
     '''
     :param score: prediction
     :param k: number of top-k
     '''
     evaluation = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    counter = 0
 
-    rec_list = []
-    discountlist = [1 / math.log(i + 1, 2) for i in range(1, k + 1)]
+    test_count = test_tensor.sum(dim=-1)                # The number of interactions of each user in test set
+    test_user_count = torch.count_nonzero(test_count)   # The number of users with interactions in the test set
 
-    for user_no in range(score.shape[0]):
+    topn_rec_index = score.topk(k=k, dim=-1).indices
+    rec_tensor, index_dim0 = get_rec_tensor(k, topn_rec_index, score.shape[1])
+    hit_tensor = rec_tensor * test_tensor               # True positive [|U|*|I|]
+    true_positive = hit_tensor.sum(dim=-1)              # [|U|,] The number of TP of each user
 
-        user_score = score[user_no].tolist()
-        user_label = label[user_no].tolist()
-        label_count = int(sum(user_label))
-        topn_recommend_score = heapq.nlargest(k, user_score)
-        topn_recommend_index = [user_score.index(i) for i in
-                                topn_recommend_score]  # map(user_score.index,topn_recommend_score)
-        rec_list.append(topn_recommend_index)
-        topn_recommend_label = [user_label[i] for i in topn_recommend_index]
-        idcg = discountlist[0:label_count]
+    discountlist = torch.tensor([1 / math.log(i + 1, 2) for i in range(1, k + 1)]).to(device) # Discount list to calculate dcg
+    rec_label = hit_tensor[index_dim0, topn_rec_index]                                        # [|U|*k] The label of recommended item
+    dcg = (rec_label * discountlist).sum(dim=-1)
+    idcg = get_idcg(discountlist, test_count, k)
 
-        # FPR FNR
-        test_item = set(test_dict[user_no])
-        rec_item = set(topn_recommend_index)
-        underestimate_items = test_item - rec_item
-        overestimate_items = rec_item - test_item
-        FPR = len(overestimate_items)/len(rec_item)
-        FNR = len(underestimate_items)/len(test_item)
-        underestimate_list = list(underestimate_items)
-        error_list = list(overestimate_items)
+    pre = true_positive.sum(dim=-1) / k
+    recall = (true_positive / (test_count + 1e-8)).sum(dim=-1)
+    f1 = (2 * true_positive / test_count.add(k)).sum(dim=-1)
+    ndcg = (dcg / idcg).sum(dim=-1)
 
-        # Popularity Bias
-        rec_cold = 0
-        rec_hot = 0
-        test_cold = 0
-        test_hot = 0
-        overestimate_cold = 0
-        overestimate_hot = 0
-        underestimate_cold = 0
-        underestimate_hot = 0
+    difference = rec_tensor - test_tensor
+    overestimate_tensor = torch.where(difference == 1, 1, 0) # The difference with element=1 indicating the item is overestimated
+    underestimate_tensor = torch.where(difference == -1, 1, 0) # The difference with element=-1 indicating the item is underestimated
 
-        for i in rec_list[user_no]:
-            if i in item_devider[1]:
-                rec_cold += 1
-            elif i in item_devider[0]:
-                rec_hot += 1
+    fpr = (overestimate_tensor.sum(dim=-1) / k).sum(dim=-1)
+    fnr = (underestimate_tensor.sum(dim=-1) / (test_count + 1e-8)).sum(dim=-1)
 
-        for i in test_dict[user_no]:
-            if i in item_devider[1]:
-                test_cold += 1
-            elif i in item_devider[0]:
-                test_hot += 1
+    rec_hot = rec_tensor * hot_tensor           # [|U|*|I|] Recommended hot item
+    rec_cold = rec_tensor * (1 - hot_tensor)
+    test_hot = test_tensor * hot_tensor
+    test_cold = test_tensor * (1 - hot_tensor)
 
-        for i in underestimate_list:
-            if i in item_devider[1]:
-                underestimate_cold += 1
-            elif i in item_devider[0]:
-                underestimate_hot += 1
+    over_hot_tensor = overestimate_tensor * hot_tensor      # [|U|*|I|] Overestimated hot item
+    over_cold_tensor = overestimate_tensor * (1-hot_tensor)
+    under_hot_tensor = underestimate_tensor * hot_tensor
+    under_cold_tensor = underestimate_tensor * (1-hot_tensor)
 
-        for i in error_list:
-            if i in item_devider[1]:
-                overestimate_cold += 1
-            elif i in item_devider[0]:
-                overestimate_hot += 1
+    ohr = (over_hot_tensor.sum(dim=-1) / (rec_hot.sum(dim=-1) + 1e-8)).sum(dim=-1)
+    uhr = (under_hot_tensor.sum(dim=-1) / (test_hot.sum(dim=-1) + 1e-8)).sum(dim=-1)
+    ocr = (over_cold_tensor.sum(dim=-1) / (rec_cold.sum(dim=-1) + 1e-8)).sum(dim=-1)
+    ucr = (under_cold_tensor.sum(dim=-1) / (test_cold.sum(dim=-1) + 1e-8)).sum(dim=-1)
 
-        if label_count == 0:
-            counter += 1
-            continue
-        else:
-            topk_label = topn_recommend_label[0:k]
-            true_positive = sum(topk_label)
-            evaluation[0] += true_positive / k                                  # Precision
-            evaluation[1] += true_positive / label_count                        # Recall
-            evaluation[2] += 2 * true_positive / (k + label_count)              # F1
-            evaluation[3] += np.dot(topk_label, discountlist[0:]) / sum(idcg)   # NDCG
-            if rec_hot:
-                evaluation[4] += overestimate_hot / rec_hot                     # OHR
-            if test_hot:
-                evaluation[5] += underestimate_hot / test_hot                     # UHR
-            if rec_cold:
-                evaluation[6] += overestimate_cold / rec_cold                   # OCR
-            if test_cold:
-                evaluation[7] += underestimate_cold / test_cold                   # UCR
-            evaluation[8] += FPR
-            evaluation[9] += FNR
-    return [i / (score.shape[0] - counter) for i in evaluation]
+
+    evaluation[0], evaluation[1], evaluation[2], evaluation[3], evaluation[4], evaluation[5], evaluation[6], evaluation[7], evaluation[8], evaluation[9] = pre.item(), recall.item(), f1.item(), ndcg.item(), ohr.item(), uhr.item(), ocr.item(), ucr.item(), fpr.item(), fnr.item()
+    return [i / test_user_count.item() for i in evaluation]
 
 
 
