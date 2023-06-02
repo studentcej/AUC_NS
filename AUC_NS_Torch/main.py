@@ -64,19 +64,16 @@ def get_numbers_of_ui_and_divider(file):
     :return:
     num_users: total number of users
     num_items: total number of items
-    interaction_counter: total number of interactions
-    dividing_tensor: tensor[hot item == 1]
+    dividing_tensor: [|I|] element 1 represents hot items, while element 0 represents cold items.
     '''
     data = pd.read_csv(file, header=0, dtype='str', sep=',')
     userlist = list(data['user'].unique())
     itemlist = list(data['item'].unique())
     popularity = np.zeros(len(itemlist))
-    interaction_counter = 0
     for i in data.itertuples():
         user, item, rating = getattr(i, 'user'), getattr(i, 'item'), getattr(i, 'rating')
         user, item = int(user), int(item)
         popularity[int(item)] += 1
-        interaction_counter += 1
     num_users, num_items = len(userlist), len(itemlist)
 
     # Dividing HOT&COLD
@@ -84,9 +81,9 @@ def get_numbers_of_ui_and_divider(file):
     item_threshold = int(num_items * 0.85)
     divide_item = x[item_threshold]
     popularty_threshold = popularity[divide_item]
-    pop_tensor = torch.tensor(popularity).to(device)
+    pop_tensor = torch.tensor(popularity)
     dividing_tensor = torch.where(pop_tensor >= popularty_threshold, 1, 0).unsqueeze(0).expand(num_users,num_items)
-    return num_users, num_items, interaction_counter, dividing_tensor
+    return num_users, num_items, dividing_tensor
 
 
 def load_train_data(path, num_item):
@@ -101,7 +98,7 @@ def load_train_data(path, num_item):
         datapair.append((user, item))
         train_tensor[user, item] = 1
     prior = popularity / sum(popularity)
-    return train_tensor.to(device), prior, datapair
+    return train_tensor, prior, datapair
 
 
 def load_test_data(path, num_user, num_item):
@@ -111,7 +108,7 @@ def load_test_data(path, num_user, num_item):
         user, item, rating = getattr(i, 'user'), getattr(i, 'item'), getattr(i, 'rating')
         user, item = int(user), int(item)
         test_tensor[user, item] = 1
-    return test_tensor.to(device)
+    return test_tensor
 
 
 def collect_G_Lap_Adj():
@@ -217,7 +214,7 @@ def model_test():
     rating_mat = model.predict()  # |U| * |V|
     rating_mat = erase(rating_mat)
     for k in arg.topk:
-        metrices = topk_eval(rating_mat, k, test_tensor, dividing_tensor)
+        metrices = topk_eval(rating_mat, k, test_tensor.to(device), dividing_tensor.to(device))
         precision, recall, F1, ndcg, OHR, UHR, OCR, UCR, FPR, FNR = metrices[0], metrices[1], metrices[2], metrices[3],  metrices[4], metrices[5], metrices[6], metrices[7], metrices[8], metrices[9]
         Pre_dic[k] = precision
         Recall_dict[k] = recall
@@ -235,7 +232,7 @@ def model_test():
 
 
 def erase(score):
-    x = -1000 * torch.ones(num_users, num_items).to(device) * train_tensor
+    x = train_tensor.to(device) * (-1000)
     score = score + x
     return score
 
@@ -314,7 +311,7 @@ if __name__ == '__main__':
 
     init_seed(2022)
     total_file, train_file, test_file = get_data_path()
-    num_users, num_items, num_interaction,  dividing_tensor = get_numbers_of_ui_and_divider(total_file)
+    num_users, num_items, dividing_tensor = get_numbers_of_ui_and_divider(total_file)
 
     # Load Data
     train_tensor, prior, train_pair = load_train_data(train_file, num_items)
