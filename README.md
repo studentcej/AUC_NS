@@ -22,8 +22,8 @@ You can set the relevant parameters for model training,
 - `--lr_dc` learning rate decay rate.
 - `--lr_dc_epoch` training epoch at which the learning rate starts to decay.
 
-the suggesting model training parameters are below:
-#### Suggesting Model Training Parameters
+Suggested training parameters parameters are:
+#### Suggested Model Training Parameters
 |                | batch_size |  l2   |  lr  | lr_dc | lr_dc_epoch  | 
 |----------------|:----------:|:-----:|:----:|:-----:|:------------:|
 | 100k-MF        |    128     | 1e-4  | 0.1  |  0.1  |  [20,60,80]  |
@@ -44,7 +44,7 @@ AUC-optimal negative sampling related parameters:
 
 - `--N` size of the additional positive and negative samples used to estimate the sum of gradients. Larger N can provide more  accurate AUC information at the cost of longer training times.We fixed this parameter to 10 in our experiments.
 
-the suggesting AUC_NS parameters are below:
+Suggested AUC_NS parameters are:
 #### Suggested AUC_NS Parameters
 |                | $\alpha$ | $\beta$  | $\gamma$ |
 |----------------|:--------:|:--------:|:--------:|
@@ -55,7 +55,7 @@ the suggesting AUC_NS parameters are below:
 | yahoo-MF       |   0.65   |  0.001   |  0.004   |
 | yahoo-LightGCN |   0.65   |  0.001   |  0.004   |
 
-For instance, run the following command to train an embedding on STL10 with hard negatives.
+For instance, execute the following command to train CF model using AUC_NS method.
 ```
 python main.py --alpha 0.75 --beta 0.01 --gama 0.006
 ```
