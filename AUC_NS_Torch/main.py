@@ -172,8 +172,7 @@ def model_train(real_epoch):
 
     I_plus_list = dataset.pos_lens_List.to(device)
     I_minus_list = dataset.neg_lens_List.to(device)
-
-    for batch in tqdm(train_loader):
+    for index, batch in tqdm(enumerate(train_loader), total=len(train_loader)):
         optimizer.zero_grad()
 
         # Fetch Data
@@ -206,8 +205,8 @@ def model_train(real_epoch):
 def model_test():
     print('----------------', file=f)
     print('----------------')
-    print('start predicting: ', datetime.datetime.now(), file=f)
-    print('start predicting: ', datetime.datetime.now())
+    print('start evaluation: ', datetime.datetime.now(), file=f)
+    print('start evaluation: ', datetime.datetime.now())
     model.eval()
     sp = time.time()
     Pre_dic, Recall_dict, F1_dict, NDCG_dict, OHR_dict, UHR_dict, OCR_dict, UCR_dict,  FPR_dict, FNR_dict = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
@@ -226,8 +225,8 @@ def model_test():
         UCR_dict[k] = UCR
         FPR_dict[k] = FPR
         FNR_dict[k] = FNR
-    print('Predicting time:[%0.2f s]' % (time.time() - sp))
-    print('Predicting time:[%0.2f s]' % (time.time() - sp), file=f)
+    print('Evaluation time:[%0.2f s]' % (time.time() - sp))
+    print('Evaluation time:[%0.2f s]' % (time.time() - sp), file=f)
     return Pre_dic, Recall_dict, F1_dict, NDCG_dict, OHR_dict, UHR_dict, OCR_dict, UCR_dict,  FPR_dict, FNR_dict
 
 
