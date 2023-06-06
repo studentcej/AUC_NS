@@ -14,7 +14,7 @@ def parse_args():
     # Training Args
     parser.add_argument('--train_mode', default='new_train', help='training mode:new_train continue_train')
     parser.add_argument('--encoder', default='MF', help='MF LightGCN')
-    parser.add_argument('--epochs', type=int, default=150)  # 150 200 300
+    parser.add_argument('--epochs', type=int, default=500)  
     parser.add_argument('--batch_size', type=int, default=128)  # 128 1024
     parser.add_argument('--l2', type=float, default=1e-4, help='l2 penalty')  # 1e-4 1e-5 0
     parser.add_argument('--lr', type=float, default=0.1, help='learning rate')  # 0.1 5e-4 1e-3

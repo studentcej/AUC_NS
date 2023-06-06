@@ -37,9 +37,11 @@ class Data(Dataset):
         for i in batch:
             u = int(i[0])
             i = int(i[1])
-            extra_pos = np.random.choice(self.pos_dict[u], size=self.arg.N, replace=True).tolist()
-            extra_neg = np.random.choice(self.neg_dict[u], size=self.arg.N, replace=False).tolist()
-            candidate_set = np.random.choice(self.neg_dict[u], size=self.arg.M, replace=False).tolist()
+
+            extra_pos = random.choices(self.pos_dict[u], k=self.arg.N)
+            extra_neg = random.sample(self.neg_dict[u], k=self.arg.N)
+            candidate_set = random.sample(self.neg_dict[u], k=self.arg.M)
+
             data_entry = [u] + [i] + extra_pos + extra_neg + candidate_set
             new_data.append(data_entry)
         return torch.tensor(new_data)
@@ -79,7 +81,7 @@ class Data(Dataset):
             neg_dict_u = self.neg_dict[u]
             I_plus_List.append(len(pos_dict_u))
             I_minus_List.append(len(neg_dict_u))
-        return torch.tensor(I_plus_List), torch.tensor(I_minus_List)
+        return torch.IntTensor(I_plus_List), torch.IntTensor(I_minus_List)
         # return I_plus_List, I_minus_List
 
     def build_graph(self):
