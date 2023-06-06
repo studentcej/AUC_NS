@@ -176,8 +176,8 @@ def model_train(real_epoch):
         optimizer.zero_grad()
 
         # Fetch Data
-        users = batch[:,0]
-        items = batch[:,1]
+        users = batch[:, 0]
+        items = batch[:, 1]
 
         # To device
         batch = batch.to(device)

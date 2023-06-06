@@ -15,9 +15,8 @@ class Data(Dataset):
         data = []
         self.num_users = num_users
         self.num_items = num_items
-        self.pos_dict,self.pos_tensor = self.get_pos(datapair)
+        self.pos_dict = self.get_pos(datapair)
         self.neg_dict = self.get_neg(datapair, self.pos_dict)
-        self.neg_tensor = ~self.pos_tensor
         self.pos_lens_List, self.neg_lens_List = self.get_lens()
         for u in self.pos_dict.keys():
             for i in self.pos_dict[u]:
@@ -54,15 +53,13 @@ class Data(Dataset):
 
     # Get Interact Item
     def get_pos(self, datapair):
-        pos_tensor = torch.zeros(self.num_users,self.num_items)
         pos_dict = dict()
         for i in datapair:
             user = i[0]
             item = i[1]
-            pos_tensor[user,item] = 1
             pos_dict.setdefault(user, list())
             pos_dict[user].append(item)
-        return pos_dict, pos_tensor.bool()
+        return pos_dict
 
     # Get Uninteract Item
     def get_neg(self, datapair, pos_dict):
