@@ -35,7 +35,7 @@ def parse_args():
     # AUC_NS Args
     parser.add_argument('--N', type=int, default=10, help='amount of extra plus and extra minus')
     parser.add_argument('--alpha', type=float, default=0.75, help='AUC of encoders')
-    parser.add_argument('--beta', type=int, default=0.01, help='popularity_punish_rate')
+    parser.add_argument('--beta', type=float, default=0.01, help='popularity_punish_rate')
     parser.add_argument('--gama', type=float, default=0.006, help='partialAUC')
 
     # Evaluation Arg
