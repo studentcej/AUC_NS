@@ -39,12 +39,11 @@ class MF(nn.Module):
         pos_exp = torch.exp(pos_scores)
 
         # Calculate Neg
-        neg_k = (users_emb * neg_item_embs.view(self.arg.num_negsamples, self.arg.batch_size, self.dim)).sum(dim=-1)
-
+        neg_k = (users_emb.unsqueeze(dim=1) * neg_item_embs).sum(dim=-1)
 
         # Calculate Loss
         if self.arg.LOSS == 'Info_NCE':
-            neg_exp = torch.exp(neg_k).sum(dim=0)
+            neg_exp = torch.exp(neg_k).sum(dim=-1)
             # InfoNCE_loss
             InfoNCE_loss = (- torch.log(pos_exp / (pos_exp + neg_exp))).mean()
             return InfoNCE_loss
@@ -123,11 +122,11 @@ class LightGCN(nn.Module):
         pos_exp = torch.exp(pos_scores)
 
         # Calculate Neg
-        neg_k = (users_emb * neg_item_embs.view(self.arg.num_negsamples, self.arg.batch_size, self.dim)).sum(dim=-1)
+        neg_k = (users_emb.unsqueeze(dim=1) * neg_item_embs).sum(dim=-1)
 
         # Calculate Loss
         if self.arg.LOSS == 'Info_NCE':
-            neg_exp = torch.exp(neg_k).sum(dim=0)
+            neg_exp = torch.exp(neg_k).sum(dim=-1)
             # InfoNCE_loss
             InfoNCE_loss = (- torch.log(pos_exp / (pos_exp + neg_exp))).mean()
             return InfoNCE_loss
