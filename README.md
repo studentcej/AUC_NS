@@ -5,7 +5,7 @@ This thesis presents AUC-optimal negative sampling for implicit collaborative fi
 - PyTorch 1.11.0
 
 ## Supplementary experiments
-In order to prove the effectiveness and generalization of the AUC_NS algorithm more convincingly, we supplemented our comparison experiments on the large datasets gowalla and Yelp2018, which have a high number of users and items, and the results of the experiments are shown below(@top5), and the results demonstrate the great superiority of our algorithm
+In order to prove the effectiveness and generalization of the AUC_NS algorithm more convincingly, we supplemented our comparison experiments on the large datasets gowalla and Yelp2018, which have a high number of users and items, and the results of the experiments are shown below(@top5), and the results demonstrate the superiority of AUC-optimal negative sampling.
 ![](Supplementary_experiments.png)
 ## Some Tips
 Flags in `parse.py`:
