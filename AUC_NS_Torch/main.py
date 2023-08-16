@@ -32,14 +32,22 @@ def get_data_path():
         total_file = directory + '/' + '100k.csv'
         train_file = directory + '/' + '100k_train.csv'
         test_file = directory + '/' + '100k_test.csv'
-    elif arg.dataset == 'yahoo':
-        total_file = directory + '/' + 'yahoo1.csv'
-        train_file = directory + '/' + 'yahoo1_train.csv'
-        test_file = directory + '/' + 'yahoo1_test.csv'
     elif arg.dataset == '1M':
         total_file = directory + '/' + '1m1.csv'
         train_file = directory + '/' + '1m1_train.csv'
         test_file = directory + '/' + '1m1_test.csv'
+    elif arg.dataset == 'gowalla':
+        total_file = directory + '/' + 'gowalla.csv'
+        train_file = directory + '/' + 'gowalla_train.csv'
+        test_file = directory + '/' + 'gowalla_test.csv'
+    elif arg.dataset == 'amazon-book':
+        total_file = directory + '/' + 'amazon-book.csv'
+        train_file = directory + '/' + 'amazon-book_train.csv'
+        test_file = directory + '/' + 'amazon-book_test.csv'
+    elif arg.dataset == 'yelp2018':
+        total_file = directory + '/' + 'yelp2018.csv'
+        train_file = directory + '/' + 'yelp2018_train.csv'
+        test_file = directory + '/' + 'yelp2018_test.csv'
     return total_file, train_file, test_file
 
 

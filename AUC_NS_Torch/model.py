@@ -41,19 +41,10 @@ class MF(nn.Module):
         # Calculate Neg
         neg_k = (users_emb.unsqueeze(dim=1) * neg_item_embs).sum(dim=-1)
 
-        # Calculate Loss
-        if self.arg.LOSS == 'Info_NCE':
-            neg_exp = torch.exp(neg_k).sum(dim=-1)
-            # InfoNCE_loss
-            InfoNCE_loss = (- torch.log(pos_exp / (pos_exp + neg_exp))).mean()
-            return InfoNCE_loss
-        elif self.arg.LOSS == 'BPR' and self.arg.num_negsamples == 1:
-            neg_scores = neg_k.squeeze()
-            BPR_loss = torch.mean(F.softplus(neg_scores - pos_scores))
-            return BPR_loss
-        else:
-            print('Parameters Wrong')
-            sys.exit()
+        neg_scores = neg_k.squeeze()
+        BPR_loss = torch.mean(F.softplus(neg_scores - pos_scores))
+        return BPR_loss
+
 
     def predict(self):
         all_users_emb = self.User_Emb.weight
@@ -107,8 +98,6 @@ class LightGCN(nn.Module):
         users, items = torch.split(light_out, [self.num_users, self.num_items])
         return users, items
 
-
-
     def forward(self, users, items, negatives):
         # Fetch Emb
         all_users_emb, all_items_emb = self.computer()
@@ -125,20 +114,9 @@ class LightGCN(nn.Module):
         neg_k = (users_emb.unsqueeze(dim=1) * neg_item_embs).sum(dim=-1)
 
         # Calculate Loss
-        if self.arg.LOSS == 'Info_NCE':
-            neg_exp = torch.exp(neg_k).sum(dim=-1)
-            # InfoNCE_loss
-            InfoNCE_loss = (- torch.log(pos_exp / (pos_exp + neg_exp))).mean()
-            return InfoNCE_loss
-        elif self.arg.LOSS == 'BPR' and self.arg.num_negsamples == 1:
-            neg_scores = neg_k.squeeze()
-            BPR_loss = torch.mean(F.softplus(neg_scores - pos_scores))
-            return BPR_loss
-        else:
-            print('Parameters Wrong')
-            sys.exit()
-
-
+        neg_scores = neg_k.squeeze()
+        BPR_loss = torch.mean(F.softplus(neg_scores - pos_scores))
+        return BPR_loss
 
     def predict(self):
         all_users_emb, all_items_emb = self.computer()      # |U| * d, |V| * d
