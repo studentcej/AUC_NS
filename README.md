@@ -5,7 +5,7 @@ This thesis presents AUC-optimal negative sampling for implicit collaborative fi
 - PyTorch 1.11.0
 
 ## Supplementary experiments
-In order to prove the effectiveness and generalization of the AUC_NS algorithm more convincingly, we supplemented our comparison experiments on the large datasets gowalla and Yelp2018, which have a high number of users and items, and the results of the experiments are shown below(@top5), and the results demonstrate the superiority of AUC-optimal negative sampling.
+The top10 and top20 recommendation performance of the AUC_NS negative sampling algorithm on 1M and 100k is shown below, and we can get the same conclusion as in the paper.
 ![Supplementary_experiments.png](Supplementary_experiments.png)
 ## Some Tips
 Flags in `parse.py`:
@@ -27,15 +27,16 @@ You can set the relevant parameters for model training,
 
 Suggested training parameters parameters are:
 #### Suggested Model Training Parameters
-|                | batch_size |  l2   |  lr  | lr_dc | lr_dc_epoch  | 
-|----------------|:----------:|:-----:|:----:|:-----:|:------------:|
-| 100k-MF        |    128     | 1e-4  | 0.1  |  0.1  |  [20,60,80]  |
-| 100k-LightGCN  |    128     | 1e-5  | 0.1  |  0.1  |  [20,60,80]  |
-| 1M-MF          |    128     | 1e-5  | 5e-4 |   1   |      []      |
-| 1M-LightGCN    |    1024    |   0   | 1e-3 |   1   |      []      |
-| yahoo-MF       |    128     |   0   | 5e-4 |   1   |      []      |
-| yahoo-LightGCN |    128     |   0   | 5e-4 |   1   |      []      |
-
+|                    | batch_size |  l2   |  lr  | lr_dc | lr_dc_epoch  | hop | 
+|--------------------|:----------:|:-----:|:----:|:-----:|:------------:|-----|
+| 100k-MF            |    128     | 1e-4  | 0.1  |  0.1  |  [20,60,80]  | /   |
+| 100k-LightGCN      |    1024    | 1e-5  | 0.1  |  0.1  |  [20,60,80]  | 2   |
+| 1M-MF              |    128     | 1e-5  | 5e-4 |   1   |      []      | /   |
+| 1M-LightGCN        |    1024    |   0   | 1e-3 |   1   |      []      | 2   |
+| Gowalla-MF         |    1024    |   0   | 5e-4 |   1   |      []      | /   |
+| Gowalla-LightGCN   |    1024    |   0   | 5e-4 |   1   |      []      | 3   |
+| Yelp2018-MF        |    1024    |   0   | 5e-4 |   1   |      []      | /   |
+| Yelp2018-LightGCN  |    1024    |   0   | 5e-4 |   1   |      []      | 3   |
 AUC-optimal negative sampling related parameters:
 
 - `--alpha` denote the probability that the decision function assigns a higher score to a positive example than a negative example,which corresponds to macro-AUC of encoder that accounts for model-dependent bias correction.
@@ -49,22 +50,18 @@ AUC-optimal negative sampling related parameters:
 
 Suggested AUC_NS parameters are:
 #### Suggested AUC_NS Parameters
-|                | $\alpha$ | $\beta$  | $\gamma$ |
-|----------------|:--------:|:--------:|:--------:|
-| 100k-MF        |   0.75   |   0.01   |  0.006   | 
-| 100k-LightGCN  |   0.75   |   0.01   |  0.006   |
-| 1M-MF          |   0.75   |   0.01   |  0.006   |
-| 1M-LightGCN    |   0.75   |   0.01   |  0.006   |
-| yahoo-MF       |   0.65   |  0.001   |  0.004   |
-| yahoo-LightGCN |   0.65   |  0.001   |  0.004   |
+|                   | $\alpha$ | $\beta$ | $\gamma$ |
+|-------------------|:--------:|:-------:|:--------:|
+| 100k-MF           |   0.60   |  0.025  |  0.006   | 
+| 100k-LightGCN     |   0.75   |  0.025  |  0.006   |
+| 1M-MF             |   0.60   |  0.025  |  0.006   |
+| 1M-LightGCN       |   0.75   |  0.025  |  0.006   |
+| Gowalla-MF        |   0.75   |  0.001  |  0.006   |
+| Gowalla-LightGCN  |   0.75   |  0.001  |  0.006   |
+| Yelp2018-MF       |   0.75   |  0.001  |  0.006   |
+| Yelp2018-LightGCN |   0.75   |  0.001  |  0.006   |
 
 For instance, execute the following command to train CF model using AUC_NS method.
 ```
-python main.py --alpha 0.75 --beta 0.01 --gama 0.006
+python main.py --alpha 0.65 --beta 0.025 --gama 0.006
 ```
-## AUC-NS with different loss functions.
-The AUC-NS method can extend negative sampling from one to N negative examples, making it applicable to the InfoNCE loss, where it has shown excellent results on multisampling experiments, you can execute
-```
-python main.py --Loss Info_NCE --num_negsamples 3
-```
-to obtain better performance models for recommendation.
